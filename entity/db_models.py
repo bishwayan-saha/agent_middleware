@@ -7,7 +7,7 @@ Base = declarative_base()
 
 class Credentials_Master(Base):
 
-    __tablename__ = "credentials_master"
+    __tablename__ = "credentials_details"
 
     credential_id = Column(
         name="credential_id",
@@ -37,7 +37,7 @@ class Credentials_Master(Base):
 
 class Remote_Agent_Details_Master(Base):
 
-    __tablename__ = "remote_agent_details_master"
+    __tablename__ = "remote_agent_details"
 
     agent_id = Column(
         name="agent_id",

@@ -5,8 +5,8 @@ DATABASE_URL = URL.create(
     drivername="mssql+pyodbc",
     username="interopae_dev",
     password="User@PwCAdmin",
-    host="tcp:interopae-dev1.database.windows.net",
-    database="Interop_AE",
+    host="tcp:interopae-dev.database.windows.net",
+    database="InteropAE",
     query={"driver": "ODBC Driver 17 for SQL Server"},
 )
 
