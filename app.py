@@ -1,9 +1,11 @@
+import ast
 import logging
 from contextlib import asynccontextmanager
 from typing import List
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
@@ -34,7 +36,9 @@ async def lifespan(app: FastAPI):
             Remote_Agent_Details_Master
         ).all()
         logger.info("Remote Agents table loaded from DB")
-        app.state.agent_cards = [agent.agent_details for agent in remote_agents]
+        app.state.agent_cards = [
+            ast.literal_eval(agent.agent_details) for agent in remote_agents
+        ]
 
         yield
     finally:
@@ -93,3 +97,12 @@ async def get_response(message: Message):
 async def register_agent(agentDetails: AgentDetails, db: Session = Depends(get_db)):
     response = await save_agent_card(agentDetails=agentDetails, db=db)
     return JSONResponse(content=response)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
