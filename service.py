@@ -2,8 +2,8 @@ import logging
 from uuid import uuid4
 
 import httpx
-from a2a.client import A2AClient
-from a2a.types import Task
+from client.client import A2AClient
+from models.task import Task
 from fastapi import status
 from sqlalchemy.orm import Session
 
@@ -48,7 +48,7 @@ async def save_agent_card(agentDetails: AgentDetails, db: Session):
 async def get_agent_response(message: Message, client: A2AClient, session_id: str):
     payload = {
         "id": uuid4().hex,
-        "sessionId": session_id,
+        "session_id": session_id,
         "message": {"role": "user", "parts": [{"type": "text", "text": message.query}]},
     }
     try:
@@ -60,7 +60,7 @@ async def get_agent_response(message: Message, client: A2AClient, session_id: st
             return "No response"
     except Exception as e:
         logger.error(
-            f"An error occurred while fetching respons from agent\n reason: {str(e)}"
+            f"An error occurred while fetching respons from agent\n reason: {e.__str__()}"
         )
         raise InteropAEException(
             message=str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -4,8 +4,7 @@ from contextlib import asynccontextmanager
 from typing import List
 from uuid import uuid4
 
-import httpx
-from a2a.client import A2AClient
+from client.client import A2AClient
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -22,6 +21,7 @@ from entity.request import (
     StatusMessage,
 )
 from service import get_agent_response, save_agent_card
+import asyncio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ def get_db():
         db.close()
 
 
-client = A2AClient(httpx_client=httpx.AsyncClient(), url="http://localhost:10000")
+client = A2AClient(url="http://localhost:10000")
 
 session_id = uuid4().hex
 
@@ -106,7 +106,7 @@ def get_agent_cards():
     )
 
 
-@app.post("/response", status_code=status.HTTP_200_OK)
+@app.post("/response", status_code=status.HTTP_200_OK,)
 async def get_response(message: Message):
     response = await get_agent_response(message, client, session_id)
     return JSONResponse(
@@ -137,6 +137,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def timeout_middleware(request: Request, call_next):
+    try:
+        return await asyncio.wait_for(call_next(request), timeout=150)
+    except asyncio.TimeoutError:
+        raise InteropAEException(message="Request timed out", status_code=status.HTTP_408_REQUEST_TIMEOUT)
 
 
 @app.exception_handler(InteropAEException)
