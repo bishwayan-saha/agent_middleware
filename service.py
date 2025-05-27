@@ -2,12 +2,13 @@ import logging
 from uuid import uuid4
 
 import httpx
+from a2a.client import A2AClient
+from a2a.types import Task
+from fastapi import status
 from sqlalchemy.orm import Session
 
-from client.client import A2AClient
 from entity.db_models import Remote_Agent_Details_Master
-from entity.request import AgentDetails, Message
-from models.task import Task
+from entity.request import AgentDetails, InteropAEException, Message
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,7 +32,6 @@ async def save_agent_card(agentDetails: AgentDetails, db: Session):
             db.refresh(remote_agent_details)
             logger.info("--- Remote agent details saved in the database ---")
             return {
-                "message": "Agent added successfully!",
                 "agent_id": str(remote_agent_details.agent_id),
                 "agent_name": remote_agent_details.agent_name,
                 "server_url": remote_agent_details.server_url,
@@ -39,7 +39,10 @@ async def save_agent_card(agentDetails: AgentDetails, db: Session):
             }
         except Exception as e:
             db.rollback()
-            return {"error": f"Failed to add agent, reason: {str(e)}"}
+            logger.error(f"Erorr occurred while saving agent details\n reason: {str(e)}")
+            raise InteropAEException(
+                message=str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 async def get_agent_response(message: Message, client: A2AClient, session_id: str):
@@ -52,11 +55,13 @@ async def get_agent_response(message: Message, client: A2AClient, session_id: st
         task: Task = await client.send_task(payload)
         if task.history and len(task.history) > 1:
             reply = task.history[-1]
-            return {"message": reply.parts[0].text}
+            return reply.parts[0].text
         else:
-            return {"message": "No response"}
+            return "No response"
     except Exception as e:
         logger.error(
-            f"An error occurred while fetching respons from agent\n reason: {e}"
+            f"An error occurred while fetching respons from agent\n reason: {str(e)}"
         )
-        return {"message": "Some error occurred"}
+        raise InteropAEException(
+            message=str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
