@@ -19,8 +19,9 @@ from entity.request import (
     Message,
     ServerResponse,
     StatusMessage,
+    CredentialDetails
 )
-from service import get_agent_response, save_agent_card
+from service import get_agent_response, save_agent_card, save_new_credential
 import asyncio
 
 logging.basicConfig(level=logging.INFO)
@@ -94,6 +95,16 @@ def get_credentials():
         ).model_dump()
     )
 
+@app.post("/credentials", status_code=status.HTTP_201_CREATED)
+async def add_new_credential(credential_details_dto: CredentialDetails, db: Session = Depends(get_db)):
+    response = await save_new_credential(credential_details_dto=credential_details_dto, db=db)
+    return JSONResponse(
+        content=ServerResponse(
+            data=response,
+            status=StatusMessage.OK,
+            message="credentials addedd successfully",
+        ).model_dump()
+    )
 
 @app.get("/agent_cards", status_code=status.HTTP_200_OK)
 def get_agent_cards():

@@ -7,8 +7,8 @@ from models.task import Task
 from fastapi import status
 from sqlalchemy.orm import Session
 
-from entity.db_models import Remote_Agent_Details_Master
-from entity.request import AgentDetails, InteropAEException, Message
+from entity.db_models import Remote_Agent_Details_Master, Credentials_Master
+from entity.request import AgentDetails, InteropAEException, Message, CredentialDetails
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,6 +62,26 @@ async def get_agent_response(message: Message, client: A2AClient, session_id: st
         logger.error(
             f"An error occurred while fetching respons from agent\n reason: {e.__str__()}"
         )
+        raise InteropAEException(
+            message=str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+
+async def save_new_credential(credential_details_dto: CredentialDetails, db: Session) -> str:
+    try:
+        credential_details: Credentials_Master = Credentials_Master(
+                credential_name=credential_details_dto.credential_name,
+                credential_value=credential_details_dto.credential_value,
+                created_by="bishwayan.saha@pwc.com"
+        )
+        db.add(credential_details)
+        db.commit()
+        db.refresh(credential_details)
+        logger.info("--- New credential details saved in the database ---")
+        return "credential added successfully"
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Erorr occurred while adding credential details\n reason: {str(e)}")
         raise InteropAEException(
             message=str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

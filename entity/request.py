@@ -34,6 +34,11 @@ class AgentDetails(BaseModel):
     url: str = Field(..., description="URL of agent server")
 
 
+class CredentialDetails(BaseModel):
+    credential_name: str = Field(..., description="")
+    credential_value: str = Field(..., description="")
+
+
 class InteropAEException(Exception):
 
     def __init__(self, message: str, status_code: int) -> None:

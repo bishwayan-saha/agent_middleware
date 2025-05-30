@@ -18,9 +18,18 @@ class Credentials_Master(Base):
     credential_name = Column(name="credential_name", type_=String, nullable=False)
     credential_value = Column(name="credential_value", type_=Text, nullable=False)
     created_by = Column(name="created_by", type_=String, nullable=False)
-    created_at = Column(name="created_at", type_=DATETIME, nullable=False)
+    created_at = Column(name="created_at", type_=DATETIME, nullable=False, server_default="GETDATE()")
     updated_by = Column(name="updated_by", type_=String, nullable=True)
     updated_at = Column(name="updated_at", type_=DATETIME, nullable=True)
+
+    def __init__(self, credential_name: str, credential_value: str, created_by: str):
+        """Constructor to initialize a new credential entry."""  # Generate a unique ID
+        self.credential_name = credential_name
+        self.credential_value = credential_value
+        self.created_by = created_by
+        self.updated_by = None
+        self.updated_at = None
+
 
     def __str__(self):
         return (
