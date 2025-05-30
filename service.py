@@ -8,7 +8,7 @@ from fastapi import status
 from sqlalchemy.orm import Session
 
 from entity.db_models import Remote_Agent_Details_Master, Credentials_Master
-from entity.request import AgentDetails, InteropAEException, Message, CredentialDetails
+from entity.request import AgentDetails, InteropAEException, Message, CredentialDetails, AgentResponseType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -55,12 +55,16 @@ async def get_agent_response(message: Message, client: A2AClient, session_id: st
         task: Task = await client.send_task(payload)
         if task.history and len(task.history) > 1:
             reply = task.history[-1]
-            return reply.parts[0].text
+            response = reply.parts[0].text
+            type = AgentResponseType.HTML if all(tag in response for tag in ["<html", "</html>", "<body", "</body>"]) else AgentResponseType.TEXT
+            if type == AgentResponseType.HTML:
+                response = response[response.find("<html") : response.find("</html>") + len("</html>")]
+            return {"response": response, "type": type.value}
         else:
             return "No response"
     except Exception as e:
         logger.error(
-            f"An error occurred while fetching respons from agent\n reason: {e.__str__()}"
+            f"An error occurred while fetching respons from agent\n reason: {e}"
         )
         raise InteropAEException(
             message=str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR

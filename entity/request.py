@@ -10,6 +10,11 @@ class StatusMessage(str, Enum):
     ERROR = "error"
 
 
+class AgentResponseType(str, Enum):
+    HTML = "html"
+    TEXT = "text"
+
+
 ## General response structure
 class ServerResponse(BaseModel):
     data: Any = Field(

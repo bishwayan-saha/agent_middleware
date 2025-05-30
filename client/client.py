@@ -49,7 +49,7 @@ class A2AClient:
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    self.url, json=request.model_dump(), timeout=30
+                    self.url, json=request.model_dump(), timeout=150
                 )
                 response.raise_for_status()
                 return response.json()

@@ -117,7 +117,7 @@ def get_agent_cards():
     )
 
 
-@app.post("/response", status_code=status.HTTP_200_OK,)
+@app.post("/response", status_code=status.HTTP_200_OK)
 async def get_response(message: Message):
     response = await get_agent_response(message, client, session_id)
     return JSONResponse(
