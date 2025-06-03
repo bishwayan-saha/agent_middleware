@@ -64,7 +64,7 @@ def get_db():
         db.close()
 
 
-client = A2AClient(url="http://4.247.151.9/:10000")
+client = A2AClient(url="http://4.247.151.9:10000")
 
 session_id = uuid4().hex
 
