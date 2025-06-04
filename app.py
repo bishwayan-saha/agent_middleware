@@ -23,6 +23,10 @@ from entity.request import (
 )
 from service import get_agent_response, save_agent_card, save_new_credential
 import asyncio
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,12 +51,12 @@ async def lifespan(app: FastAPI):
         app.state.agent_cards = [
             ast.literal_eval(agent.agent_details) for agent in remote_agents
         ]
-
         yield
     finally:
         db.close()
 
-
+server_domain = os.getenv("SERVER_DOMAIN") or "http://localhost"
+logger.info(f"Server started at {server_domain}")
 app = FastAPI(lifespan=lifespan)
 
 
@@ -64,7 +68,7 @@ def get_db():
         db.close()
 
 
-client = A2AClient(url="http://4.247.151.9:10000")
+client = A2AClient(url=f"{server_domain}:10000")
 
 session_id = uuid4().hex
 
