@@ -4,7 +4,7 @@ FROM python:3.13.3-slim
 
 # Set environment variables
 ENV ACCEPT_EULA=Y
-ENV SERVER_DOMAIN = http://4.247.151.9
+ENV SERVER_DOMAIN=http://4.247.151.9
 
 # Install dependencies
 RUN apt-get update && \
