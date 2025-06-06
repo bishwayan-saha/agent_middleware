@@ -1,14 +1,17 @@
 import ast
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import List
 from uuid import uuid4
-from client.client import A2AClient
+
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
+
+from client.client import A2AClient
 from database import SessionLocal
 from entity.db_models import Credentials_Master, Remote_Agent_Details_Master
 from entity.request import (
@@ -19,11 +22,11 @@ from entity.request import (
     StatusMessage,
 )
 from service import get_agent_response, save_agent_card
-import asyncio
-import requests
+from utils.scheduler import scheduler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -48,8 +51,12 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         db.close()
+    scheduler.shutdown()
 
+
+scheduler.start()
 app = FastAPI(lifespan=lifespan)
+
 
 def get_db():
     db = SessionLocal()
@@ -58,9 +65,11 @@ def get_db():
     finally:
         db.close()
 
+
 client = A2AClient(url="http://localhost:10000")
 
 session_id = uuid4().hex
+
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
@@ -77,6 +86,7 @@ def health_check(db: Session = Depends(get_db)):
         message="server is running",
     )
 
+
 @app.get("/credentials", status_code=status.HTTP_200_OK)
 def get_credentials():
     return JSONResponse(
@@ -86,6 +96,7 @@ def get_credentials():
             message="credentials fetched successfully",
         ).model_dump()
     )
+
 
 @app.get("/agent_cards", status_code=status.HTTP_200_OK)
 def get_agent_cards():
@@ -97,46 +108,11 @@ def get_agent_cards():
         ).model_dump()
     )
 
-'''
-####earlier one without scheduler
-# first check db to get all the servers
-# call well known url of every server you get in step 1
-# if call is successful, set status online else offline w.r.t agent name
-@app.get("/servers", status_code=status.HTTP_200_OK)
-def get_servers(db: Session = Depends(get_db)):
-    server_list = []
-    
-    # Fetch all remote agent servers from the db
-    remote_servers = db.query(Remote_Agent_Details_Master).all()
-    
-    for server in remote_servers:
-        well_known_url = .well-known/agent.json
-        
-        try:
-            # trying to get the well-known endpoint with a timeout
-            response = requests.get(well_known_url, timeout=5)
-            # If response status is 200 mark online.
-            current_status = "online" if response.status_code == 200 else "offline"
-        except Exception:
-            # If exceotion, mark offline.
-            current_status = "offline"
-        
-        server_list.append({
-            "name": server.agent_name,
-            "url": .well-known/agent.json,
-            "status": current_status,
-        })
-    
-    # Build and return the JSON response similar to the agent cards endpoint.
-    return JSONResponse(
-        content=ServerResponse(
-            data=server_list,
-            status=StatusMessage.OK,
-            message="Servers fetched successfully",
-        ).model_dump()
-    )
-'''
-@app.post("/response", status_code=status.HTTP_200_OK,)
+
+@app.post(
+    "/response",
+    status_code=status.HTTP_200_OK,
+)
 async def get_response(message: Message):
     response = await get_agent_response(message, client, session_id)
     return JSONResponse(
@@ -146,6 +122,7 @@ async def get_response(message: Message):
             message="agent has responded successfully",
         ).model_dump()
     )
+
 
 @app.post("/register_agent", status_code=status.HTTP_201_CREATED)
 async def register_agent(agentDetails: AgentDetails, db: Session = Depends(get_db)):
@@ -158,6 +135,7 @@ async def register_agent(agentDetails: AgentDetails, db: Session = Depends(get_d
         ).model_dump()
     )
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -166,12 +144,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.middleware("http")
 async def timeout_middleware(request: Request, call_next):
     try:
         return await asyncio.wait_for(call_next(request), timeout=150)
     except asyncio.TimeoutError:
-        raise InteropAEException(message="Request timed out", status_code=status.HTTP_408_REQUEST_TIMEOUT)
+        raise InteropAEException(
+            message="Request timed out", status_code=status.HTTP_408_REQUEST_TIMEOUT
+        )
+
 
 @app.exception_handler(InteropAEException)
 async def handle_exception(request: Request, exception: InteropAEException):
