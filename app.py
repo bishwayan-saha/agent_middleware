@@ -25,6 +25,7 @@ from service import get_agent_response, save_agent_card, save_new_credential
 import asyncio
 import os
 from dotenv import load_dotenv
+from utils.scheduler import scheduler
 
 load_dotenv()
 
@@ -54,6 +55,10 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         db.close()
+    scheduler.shutdown()
+
+
+scheduler.start()
 
 server_domain = os.getenv("SERVER_DOMAIN") or "http://localhost"
 logger.info(f"Server started at {server_domain}")
