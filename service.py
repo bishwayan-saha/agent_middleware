@@ -25,6 +25,7 @@ async def save_agent_card(agentDetails: AgentDetails, db: Session):
             server_url=agentDetails.url,
             agent_details=str(response.json()),
             created_by="bishwayan.saha@pwc.com",  ## hardcoded for now. Will be replaced when auth will be implemented
+            agent_status="ONLINE"
         )
         try:
             db.add(remote_agent_details)
@@ -39,7 +40,7 @@ async def save_agent_card(agentDetails: AgentDetails, db: Session):
             }
         except Exception as e:
             db.rollback()
-            logger.error(f"Erorr occurred while saving agent details\n reason: {str(e)}")
+            logger.error(f"Error occurred while saving agent details\n reason: {str(e)}")
             raise InteropAEException(
                 message=str(e), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

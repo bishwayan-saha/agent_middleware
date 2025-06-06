@@ -18,7 +18,9 @@ class Credentials_Master(Base):
     credential_name = Column(name="credential_name", type_=String, nullable=False)
     credential_value = Column(name="credential_value", type_=Text, nullable=False)
     created_by = Column(name="created_by", type_=String, nullable=False)
-    created_at = Column(name="created_at", type_=DATETIME, nullable=False, server_default="GETDATE()")
+    created_at = Column(
+        name="created_at", type_=DATETIME, nullable=False, server_default="GETDATE()"
+    )
     updated_by = Column(name="updated_by", type_=String, nullable=True)
     updated_at = Column(name="updated_at", type_=DATETIME, nullable=True)
 
@@ -29,7 +31,6 @@ class Credentials_Master(Base):
         self.created_by = created_by
         self.updated_by = None
         self.updated_at = None
-
 
     def __str__(self):
         return (
@@ -63,6 +64,9 @@ class Remote_Agent_Details_Master(Base):
     )
     updated_by = Column(name="updated_by", type_=String, nullable=True)
     updated_at = Column(name="updated_at", type_=DATETIME, nullable=True)
+    agent_status = Column(
+        name="agent_status", type_=String, nullable=False, default="OFFLINE"
+    )
 
     def __init__(
         self,
@@ -72,6 +76,7 @@ class Remote_Agent_Details_Master(Base):
         created_by,
         updated_by=None,
         updated_at=None,
+        agent_status="OFFLINE",
     ):
         self.agent_name = agent_name
         self.server_url = server_url
@@ -79,8 +84,11 @@ class Remote_Agent_Details_Master(Base):
         self.created_by = created_by
         self.updated_by = updated_by
         self.updated_at = updated_at
+        self.agent_status = agent_status
 
     def __str__(self):
         return f"""Remote_Agent_Details_Master(agent_name={self.agent_name}, 
                     server_url={self.server_url}, created_by={self.created_by}, 
-                    created_at={self.created_at}, updated_by={self.updated_by}, updated_at={self.updated_at})"""
+                    created_at={self.created_at}, updated_by={self.updated_by}, updated_at={self.updated_at},
+                    agent_status={self.agent_status}) 
+                    """
