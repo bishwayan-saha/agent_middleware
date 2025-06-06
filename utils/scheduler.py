@@ -44,4 +44,4 @@ def check_agents_status():
 
 # APScheduler setup
 scheduler = BackgroundScheduler()
-scheduler.add_job(check_agents_status, CronTrigger(minute="*/1"))
+scheduler.add_job(check_agents_status, CronTrigger(minute="*/10"))
